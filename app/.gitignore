@@ -1,0 +1,11 @@
+/build
+
+storeFile=piu-vpn-release.jks
+storePassword=myomin
+keyAlias=piu-vpn
+keyPassword=myomin
+
+keystore.properties
+*.jks
+*.keystore
+
