@@ -26,7 +26,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "API_BASE_URL", "\"http://192.168.100.123:8080\"")
+        buildConfigField(
+            "String",
+            "API_BASE_URL",
+            "\"http://192.168.100.123:8080\"")
     }
 
     val hasReleaseKeystore = keystorePropertiesFile.exists() && keystoreProperties.containsKey("storeFile")

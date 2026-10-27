@@ -15,7 +15,7 @@ object AdConfig {
     // Production Ad Unit IDs (သင့် AdMob က real IDs)
     // ============================================================
     private const val PROD_REWARDED = "ca-app-pub-XXXXXXXXXXXXXXXX/AAAAAAAAAA"
-    private const val PROD_BANNER = "ca-app-pub-XXXXXXXXXXXXXXXX/BBBBBBBBBB"
+    private const val PROD_BANNER = "ca-app-pub-6761722362940534/6659533765"
     private const val PROD_APP_OPEN = "ca-app-pub-XXXXXXXXXXXXXXXX/CCCCCCCCCC"
 
     // ============================================================
