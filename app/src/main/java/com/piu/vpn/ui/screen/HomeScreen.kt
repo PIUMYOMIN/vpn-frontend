@@ -91,7 +91,40 @@ fun HomeScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            com.piu.vpn.ads.BannerAdSlot()
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                when {
+                    state.isAdLoading -> {
+                        LinearProgressIndicator(
+                            progress = { state.adLoadProgress / 100f },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Text(
+                            text = "လုပ်ဆောင်နေဆဲ (ခန့်မှန်း) ${state.adLoadProgress}%",
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        )
+                    }
+                    state.isAdReady -> {
+                        Text(
+                            text = "ချိတ်ဆက်လို့ရပါပြီ",
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        )
+                    }
+                    state.adLoadFailed -> {
+                        Text(
+                            text = "ပြန်ကြိုးစားပါ",
+                            modifier = Modifier.padding(vertical = 8.dp),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+                com.piu.vpn.ads.BannerAdSlot()
+            }
         },
     ) { padding ->
         Column(
@@ -130,6 +163,9 @@ fun HomeScreen(
             // Connect Button
             ConnectButton(
                 status = state.status,
+                enabled = state.status is VpnStatus.Connected ||
+                    state.entitlement?.active == true ||
+                    !state.isAdLoading,
                 onClick = viewModel::onConnectClick,
             )
 
@@ -198,6 +234,7 @@ private fun StatusIcon(status: VpnStatus) {
 @Composable
 private fun ConnectButton(
     status: VpnStatus,
+    enabled: Boolean,
     onClick: () -> Unit,
 ) {
     val isConnecting = status is VpnStatus.Connecting
@@ -216,7 +253,7 @@ private fun ConnectButton(
 
     Button(
         onClick = onClick,
-        enabled = !isConnecting,
+        enabled = enabled && !isConnecting,
         modifier = Modifier.size(200.dp),
         shape = CircleShape,
         colors = ButtonDefaults.buttonColors(containerColor = bgColor),

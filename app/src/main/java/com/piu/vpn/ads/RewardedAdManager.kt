@@ -29,6 +29,9 @@ class RewardedAdManager(private val context: Context) {
     var onRewarded: (() -> Unit)? = null
         private set
 
+    var onStateChanged: ((isLoading: Boolean, isReady: Boolean) -> Unit)? = null
+    var onLoadFailed: (() -> Unit)? = null
+
     fun isReady(): Boolean = rewardedAd != null
 
     /**
@@ -40,6 +43,7 @@ class RewardedAdManager(private val context: Context) {
     fun load(customData: String) {
         if (isLoading || rewardedAd != null) return
         isLoading = true
+        onStateChanged?.invoke(true, false)
 
         val request = AdRequest.Builder().build()
 
@@ -56,12 +60,15 @@ class RewardedAdManager(private val context: Context) {
                     ad.setServerSideVerificationOptions(options)
                     rewardedAd = ad
                     isLoading = false
+                    onStateChanged?.invoke(false, true)
                 }
 
                 override fun onAdFailedToLoad(err: LoadAdError) {
                     Log.e(TAG, "onAdFailedToLoad: ${err.message} (${err.code})")
                     rewardedAd = null
                     isLoading = false
+                    onStateChanged?.invoke(false, false)
+                    onLoadFailed?.invoke()
                 }
             },
         )
@@ -98,6 +105,7 @@ class RewardedAdManager(private val context: Context) {
             override fun onAdDismissedFullScreenContent() {
                 Log.d(TAG, "onAdDismissedFullScreenContent")
                 rewardedAd = null
+                onStateChanged?.invoke(false, false)
                 onDismissed()
                 // Pre-load for next time
                 load(customData)
@@ -106,6 +114,7 @@ class RewardedAdManager(private val context: Context) {
             override fun onAdFailedToShowFullScreenContent(err: AdError) {
                 Log.e(TAG, "onAdFailedToShow: ${err.message}")
                 rewardedAd = null
+                onStateChanged?.invoke(false, false)
                 onFailed(err.message)
                 load(customData)
             }

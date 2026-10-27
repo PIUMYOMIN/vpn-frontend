@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Base64
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import com.piu.vpn.ads.RewardedAdManager
 import com.piu.vpn.data.Entitlement
 import com.piu.vpn.data.VpnStats
@@ -31,6 +32,7 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
     val uiState: StateFlow<VpnUiState> = _uiState.asStateFlow()
     private var vpnManager: VpnConnectionManager? = null
     private var connectAfterAd = false
+    private var adProgressJob: Job? = null
 
     private val ownerTag: String
         get() {
@@ -48,6 +50,22 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
                 installId = ApiClient.tokenStore.installId,
                 isGuest = !ApiClient.tokenStore.hasToken(),
             )
+        }
+        rewardedAd.onStateChanged = { isLoading, isReady ->
+            _uiState.update {
+                it.copy(
+                    isAdLoading = isLoading,
+                    isAdReady = isReady,
+                    adLoadProgress = if (isReady) 100 else if (isLoading) it.adLoadProgress else 0,
+                    adLoadFailed = false,
+                )
+            }
+            if (isLoading) startAdLoadProgress() else adProgressJob?.cancel()
+        }
+        rewardedAd.onLoadFailed = {
+            _uiState.update {
+                it.copy(isAdLoading = false, isAdReady = false, adLoadProgress = 0, adLoadFailed = true)
+            }
         }
         rewardedAd.load(ownerTag)
         startEntitlementPoller()
@@ -70,15 +88,21 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
             else -> {
                 if (hasActiveGrant(state.entitlement)) {
                     connect()
-                } else if (!state.adRequested) {
+                } else if (state.isAdReady && !state.adRequested) {
                     requestRewardedAd(connectAfter = true)
+                } else if (!state.isAdLoading) {
+                    rewardedAd.load(ownerTag)
                 }
             }
         }
     }
 
     fun onWatchAdClick() {
-        requestRewardedAd(connectAfter = true)
+        if (_uiState.value.isAdReady) {
+            requestRewardedAd(connectAfter = true)
+        } else if (!_uiState.value.isAdLoading) {
+            rewardedAd.load(ownerTag)
+        }
     }
 
     fun onAdRequestedConsumed() {
@@ -100,6 +124,10 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
         activity: android.app.Activity,
         onFailed: (String) -> Unit,
     ) {
+        if (!_uiState.value.isAdReady) {
+            rewardedAd.load(ownerTag)
+            return
+        }
         val tag = ownerTag
         rewardedAd.show(
             activity = activity,
@@ -145,6 +173,22 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
                 onFailed(msg)
             },
         )
+    }
+
+    private fun startAdLoadProgress() {
+        adProgressJob?.cancel()
+        adProgressJob = viewModelScope.launch {
+            while (_uiState.value.isAdLoading) {
+                delay(300)
+                _uiState.update { state ->
+                    if (state.isAdLoading) {
+                        state.copy(adLoadProgress = (state.adLoadProgress + 1).coerceAtMost(90))
+                    } else {
+                        state
+                    }
+                }
+            }
+        }
     }
 
     fun refreshEntitlement() {
