@@ -78,7 +78,7 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onWatchAdClick() {
-        requestRewardedAd(connectAfter = false)
+        requestRewardedAd(connectAfter = true)
     }
 
     fun onAdRequestedConsumed() {
@@ -110,7 +110,7 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
                     connectAfterAd = false
                     var lastNetworkError = false
                     repeat(8) {
-                        delay(1500)
+                        delay(1000)
                         lastNetworkError = !fetchEntitlement()
                         if (hasActiveGrant(_uiState.value.entitlement)) {
                             if (shouldConnect && _uiState.value.status !is VpnStatus.Connected) {
@@ -119,6 +119,16 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
                             return@launch
                         }
                     }
+
+                    // Fallback: If ad reward was earned and connect was requested, attempt connection
+                    if (shouldConnect && _uiState.value.status !is VpnStatus.Connected) {
+                        connect()
+                        delay(1000)
+                        if (_uiState.value.status is VpnStatus.Connected || _uiState.value.status is VpnStatus.Connecting) {
+                            return@launch
+                        }
+                    }
+
                     val msg = if (lastNetworkError) {
                         "Server မ ရောက်ပါ — ဖုန်းနဲ့ Ubuntu Wi-Fi တူလား စစ်ပါ"
                     } else {
