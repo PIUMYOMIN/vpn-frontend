@@ -29,7 +29,7 @@ android {
         buildConfigField(
             "String",
             "API_BASE_URL",
-            "\"http://192.168.100.123:8080\"")
+            "\"https://ubantu-aspire-es1-432.tail22b5f8.ts.net\"")
     }
 
     val hasReleaseKeystore = keystorePropertiesFile.exists() && keystoreProperties.containsKey("storeFile")
