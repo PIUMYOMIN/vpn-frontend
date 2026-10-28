@@ -18,6 +18,11 @@ class VpnRepository {
         api.entitlement()
     }
 
+    // Ask the server whether this owner selected the rare fallback grant.
+    suspend fun requestFallbackEntitlement(): ApiResult<EntitlementResponse> = call {
+        api.fallbackEntitlement()
+    }
+
     // 403 no_entitlement ကို Error မဟုတ်ဘဲ "no entitlement" အဖြစ် ပြန်ပေး
     suspend fun getVpnConfig(): ApiResult<VpnConfigResponse> {
         return try {

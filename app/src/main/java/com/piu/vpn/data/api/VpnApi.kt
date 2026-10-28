@@ -55,6 +55,10 @@ interface VpnApi {
     @GET("/api/entitlement")
     suspend fun entitlement(): Response<EntitlementResponse>
 
+    // Request the server-controlled rare fallback entitlement after an AdMob no-fill/load failure.
+    @POST("/api/entitlement/fallback")
+    suspend fun fallbackEntitlement(): Response<EntitlementResponse>
+
     @GET("/api/vpn/config")
     suspend fun vpnConfig(): Response<VpnConfigResponse>
 

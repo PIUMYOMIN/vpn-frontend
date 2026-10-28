@@ -66,6 +66,22 @@ class VpnViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.update {
                 it.copy(isAdLoading = false, isAdReady = false, adLoadProgress = 0, adLoadFailed = true)
             }
+
+            // Only an AdMob load failure requests the server-controlled rare fallback.
+            viewModelScope.launch {
+                when (val result = vpnRepo.requestFallbackEntitlement()) {
+                    is ApiResult.Success -> if (result.data.active) {
+                        applyEntitlement(
+                            result.data.active,
+                            result.data.expiresAt,
+                            result.data.remainingSeconds,
+                            result.data.grantedBy,
+                        )
+                        connect()
+                    }
+                    else -> Unit
+                }
+            }
         }
         rewardedAd.load(ownerTag)
         startEntitlementPoller()
